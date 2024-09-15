@@ -398,16 +398,25 @@ class KotlinDebugAdapter(
 	override fun loadedSources(args: LoadedSourcesArguments): CompletableFuture<LoadedSourcesResponse> = notImplementedDAPMethod()
 	
 	override fun evaluate(args: EvaluateArguments): CompletableFuture<EvaluateResponse> = async.compute {
-		val variable = (args.frameId
+		if (args.frameId == null) {
+			EvaluateResponse().apply {
+				result = "unknown"
+				variablesReference = 0
+			}
+		}
+		else {
+
+			val variable = (args.frameId
 			.toLong()
 			.let(converter::toInternalStackFrame)
 				?: throw KotlinDAException("Could not find stack frame with ID ${args.frameId}"))
 			.evaluate(args.expression)
 			?.let(converter::toDAPVariable)
 
-		EvaluateResponse().apply {
-			result = variable?.value ?: "unknown"
-			variablesReference = variable?.variablesReference ?: 0
+			EvaluateResponse().apply {
+				result = variable?.value ?: "unknown"
+				variablesReference = variable?.variablesReference ?: 0
+			}
 		}
 	}
 	
